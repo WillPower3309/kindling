@@ -1,3 +1,4 @@
+```
               ▒▒
 	                  ▒▒
 	                  ▒▒▒▒▒▒        ▒▒
@@ -23,7 +24,7 @@
 ██╔═██╗ ██║██║╚██╗██║██║  ██║██║     ██║██║╚██╗██║██║   ██║
 ██║  ██╗██║██║ ╚████║██████╔╝███████╗██║██║ ╚████║╚██████╔╝
 ╚═╝  ╚═╝╚═╝╚═╝  ╚═══╝╚═════╝ ╚══════╝╚═╝╚═╝  ╚═══╝ ╚═════╝
+```
+# Kindling
 
-## Introduction
-
-Kindling is a python tinder bot that allows a user to automate common tasks such as swiping and sending messages
+Kindling is a tinder bot written in python that allows a user to automate common tasks such as swiping and sending messages
