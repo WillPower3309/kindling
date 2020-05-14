@@ -1,44 +1,67 @@
-import json
-
 import requests
 
-def gen_url(endpoint):
-    return 'https://api.gotinder.com/v2/%s' % endpoint
+from helpers import gen_url
 
-def login():
-    PHONE_NUM = input("Phone number associated with account: ")
 
+# Define HTTP request headers (emulate iPhone)
+HEADERS = {
+    'user-agent': 'Tinder/11.4.0 (iPhone; iOS 12.4.1; Scale/2.00)',
+    'content-type': 'application/json'
+}
+
+
+def send_otp_code(phone_number):
+    # Make request
     request_url = gen_url('auth/sms/send?auth_type=sms')
-    auth_send_request = requests.post(
+    response = requests.post(
         request_url,
         data={
-            'phone_number': PHONE_NUM
+            'phone_number': phone_number
         }
     )
 
-    if auth_send_request.status_code != 200:
-        print("ERROR: Non 200 Response")
-        exit(0)
+    # Check if request succeeded
+    if response.status_code != 200:
+        print('Send OTP Code ERROR: Non 200 Response')
+        return False
+    elif not response.json()['data']['sms_sent']:
+        print('Send OTP Code ERROR: SMS not sent but request successful, try again in a few minutes')
+        return False
+    return True
 
-    if(auth_send_request.json()['data']['sms_sent']):
-        # code sent, prompt user to enter login code
-        SMS_CODE = input("Enter the SMS code sent to %s: " % PHONE_NUM)
-        request_url = gen_url('auth/sms/validate?auth_type=sms')
-        sms_verification_request = requests.post(
-            request_url,
-            data={
-                'otp_code': SMS_CODE,
-                'phone_number': PHONE_NUM
-            }
-        )
 
-        if auth_send_request.status_code != 200:
-            print("ERROR: Non 200 Response")
-            exit(0)
-        else:
-            REFRESH_TOKEN = sms_verification_request.json()['data']['refresh_token']
-            print(REFRESH_TOKEN)
+def get_refresh_token(otp_code, phone_number):
+    # Make request
+    request_url = gen_url('auth/sms/validate?auth_type=sms')
+    response = requests.post(
+        request_url,
+        data={
+            'otp_code': otp_code,
+            'phone_number': phone_number
+        }
+    )
 
-    else:
-        print("Tinder failed to send an SMS to the number specified")
-        exit(0)
+    # Check if request succeeded
+    if response.status_code != 200:
+        print('Get Refresh Token ERROR: Non 200 Response')
+        return False
+    elif not response.json()['data']['validated']:
+        return False
+    return response.json()['data']['refresh_token']
+
+
+def get_api_token(refresh_token):
+    # Make request
+    response = requests.post(
+        gen_url('auth/login/sms'),
+        data={
+            'refresh_token': refresh_token
+        },
+        headers=HEADERS
+    )
+    print(response.json())
+    # Check if request succeeded
+    if response.status_code != 200:
+        print('Get API Token ERROR: Non 200 Response')
+        return False
+    return response.json()['data']['api_token']
