@@ -1,67 +1,35 @@
 import requests
+import json
 
-from helpers import gen_url
+CODE_REQUEST_URL = "https://api.gotinder.com/v2/auth/sms/send?auth_type=sms"
+CODE_VALIDATE_URL = "https://api.gotinder.com/v2/auth/sms/validate?auth_type=sms"
+TOKEN_URL = "https://api.gotinder.com/v2/auth/login/sms"
 
-
-# Define HTTP request headers (emulate iPhone)
-HEADERS = {
-    'user-agent': 'Tinder/11.4.0 (iPhone; iOS 12.4.1; Scale/2.00)',
-    'content-type': 'application/json'
-}
-
+HEADERS = {'user-agent': 'Tinder/11.4.0 (iPhone; iOS 12.4.1; Scale/2.00)', 'content-type': 'application/json'}
 
 def send_otp_code(phone_number):
-    # Make request
-    request_url = gen_url('auth/sms/send?auth_type=sms')
-    response = requests.post(
-        request_url,
-        data={
-            'phone_number': phone_number
-        }
-    )
-
-    # Check if request succeeded
-    if response.status_code != 200:
-        print('Send OTP Code ERROR: Non 200 Response')
+    data = {'phone_number': phone_number}
+    r = requests.post(CODE_REQUEST_URL, headers=HEADERS, data=json.dumps(data), verify=False)
+    print(r.url)
+    response = r.json()
+    if(response.get("data")['sms_sent'] == False):
         return False
-    elif not response.json()['data']['sms_sent']:
-        print('Send OTP Code ERROR: SMS not sent but request successful, try again in a few minutes')
-        return False
-    return True
-
+    else:
+        return True
 
 def get_refresh_token(otp_code, phone_number):
-    # Make request
-    request_url = gen_url('auth/sms/validate?auth_type=sms')
-    response = requests.post(
-        request_url,
-        data={
-            'otp_code': otp_code,
-            'phone_number': phone_number
-        }
-    )
-
-    # Check if request succeeded
-    if response.status_code != 200:
-        print('Get Refresh Token ERROR: Non 200 Response')
+    data = {'otp_code': otp_code, 'phone_number': phone_number}
+    r = requests.post(CODE_VALIDATE_URL, headers=HEADERS, data=json.dumps(data), verify=False)
+    print(r.url)
+    response = r.json()
+    if(response.get("data")["validated"] == False):
         return False
-    elif not response.json()['data']['validated']:
-        return False
-    return response.json()['data']['refresh_token']
-
-
+    else:
+        return response.get("data")["refresh_token"]
+    
 def get_api_token(refresh_token):
-    # Make request
-    response = requests.post(
-        gen_url('auth/login/sms'),
-        data={
-            'refresh_token': refresh_token
-        },
-        headers=HEADERS
-    )
-    print(response.json())
-    # Check if request succeeded
-    if response.status_code != 200:
-        print('Get API Token ERROR: Non 200 Response')
-        return False
-    return response.json()['data']['api_token']
+    data = {'refresh_token': refresh_token }
+    r = requests.post(TOKEN_URL, headers=HEADERS, data=json.dumps(data), verify=False)
+    print(r.url)
+    response = r.json()
+    return response.get("data")["api_token"]
